@@ -2,11 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-  "test": "echo \"No tests specified\""
-}
-,
+  "main": "server.js",
   "keywords": [],
   "author": "",
   "license": "ISC",
