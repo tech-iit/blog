@@ -4,16 +4,17 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000; // Azure requires dynamic port
 
-app.use(cors());
+app.use(cors()); // Allow all origins, or specify frontend URL
 app.use(bodyParser.json());
 
+// Use environment variables for security
 const config = {
-  user: "blogserver",
-  password: "lordganesha@8",
-  server: "blogserverank.database.windows.net",
-  database: "blogdb",
+  user: process.env.DB_USER || "blogserver",
+  password: process.env.DB_PASSWORD || "lordganesha@8",
+  server: process.env.DB_SERVER || "blogserverank.database.windows.net",
+  database: process.env.DB_NAME || "blogdb",
   options: {
     encrypt: true,
     trustServerCertificate: false,
@@ -22,6 +23,7 @@ const config = {
 
 let poolPromise = null;
 
+// Connect to Azure SQL with retry
 const connectToDb = async () => {
   try {
     poolPromise = await sql.connect(config);
@@ -33,6 +35,8 @@ const connectToDb = async () => {
 };
 
 connectToDb();
+
+// ----------------- API ROUTES -----------------
 
 // Get all blogs
 app.get("/api/blogs", async (req, res) => {
@@ -51,16 +55,14 @@ app.get("/api/blogs", async (req, res) => {
   }
 });
 
-// Get single blog by ID
+// Get blog by ID
 app.get("/api/blogs/:id", async (req, res) => {
   try {
     if (!poolPromise) throw new Error("Database connection not established");
     const pool = await poolPromise;
     const { id } = req.params;
     const result = await pool.request().query`SELECT * FROM Blogs WHERE Id = ${id}`;
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: "Blog not found" });
-    }
+    if (result.recordset.length === 0) return res.status(404).json({ error: "Blog not found" });
     const blog = result.recordset[0];
     blog.images = blog.Images ? JSON.parse(blog.Images) : [];
     res.json(blog);
@@ -75,7 +77,7 @@ app.post("/api/blogs", async (req, res) => {
   try {
     if (!poolPromise) throw new Error("Database connection not established");
     const pool = await poolPromise;
-    const { title, content, author, images, mainPhoto } = req.body;
+    const { title, content, author, images } = req.body;
     const imagesJSON = JSON.stringify(images || []);
     const result = await pool.request()
       .input("title", sql.NVarChar, title)
@@ -90,7 +92,7 @@ app.post("/api/blogs", async (req, res) => {
   }
 });
 
-// Update a blog
+// Update blog
 app.put("/api/blogs/:id", async (req, res) => {
   try {
     if (!poolPromise) throw new Error("Database connection not established");
@@ -112,7 +114,7 @@ app.put("/api/blogs/:id", async (req, res) => {
   }
 });
 
-// Delete a blog
+// Delete blog
 app.delete("/api/blogs/:id", async (req, res) => {
   try {
     if (!poolPromise) throw new Error("Database connection not established");
@@ -121,9 +123,7 @@ app.delete("/api/blogs/:id", async (req, res) => {
     const result = await pool.request()
       .input("id", sql.Int, id)
       .query`DELETE FROM Blogs WHERE Id = @id`;
-    if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ error: "Blog not found" });
-    }
+    if (result.rowsAffected[0] === 0) return res.status(404).json({ error: "Blog not found" });
     res.json({ message: "Blog deleted successfully" });
   } catch (err) {
     console.error(err);
@@ -131,4 +131,5 @@ app.delete("/api/blogs/:id", async (req, res) => {
   }
 });
 
+// Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
