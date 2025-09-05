@@ -1,0 +1,34 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+
+# Environment variables
+.env
+*.env
+
+# Build output (if any)
+dist/
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs and databases (if local)
+*.log
+*.sql
+*.sqlite
+
+# Deployment artifacts
+*.zip
+deploy/
+
+# Miscellaneous
+*.pem
+*.key
