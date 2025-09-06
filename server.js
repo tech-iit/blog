@@ -77,15 +77,19 @@ app.post("/api/blogs", async (req, res) => {
   try {
     if (!poolPromise) throw new Error("Database connection not established");
     const pool = await poolPromise;
-    const { title, content, author, images } = req.body;
-    const imagesJSON = JSON.stringify(images || []);
-    const result = await pool.request()
-      .input("title", sql.NVarChar, title)
-      .input("content", sql.NVarChar(sql.MAX), content)
-      .input("author", sql.NVarChar, author || "Admin")
-      .input("images", sql.NVarChar(sql.MAX), imagesJSON)
-      .query`INSERT INTO Blogs (Title, Content, Author, Images) VALUES (@title, @content, @author, @images); SELECT SCOPE_IDENTITY() AS Id`;
-    res.json({ id: result.recordset[0].Id, title, content, author, images });
+    const { title, content, author, images, mainPhoto } = req.body;
+const imagesJSON = JSON.stringify(images || []);
+await pool.request()
+  .input("title", sql.NVarChar, title)
+  .input("content", sql.NVarChar(sql.MAX), content)
+  .input("author", sql.NVarChar, author || "Admin")
+  .input("images", sql.NVarChar(sql.MAX), imagesJSON)
+  .input("mainPhoto", sql.NVarChar(sql.MAX), mainPhoto || "")
+  .query`INSERT INTO Blogs (Title, Content, Author, Images, MainPhoto) 
+         VALUES (@title, @content, @author, @images, @mainPhoto); 
+         SELECT SCOPE_IDENTITY() AS Id`;
+res.json({ id: result.recordset[0].Id, title, content, author, images, mainPhoto });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -98,16 +102,19 @@ app.put("/api/blogs/:id", async (req, res) => {
     if (!poolPromise) throw new Error("Database connection not established");
     const pool = await poolPromise;
     const { id } = req.params;
-    const { title, content, author, images } = req.body;
-    const imagesJSON = JSON.stringify(images || []);
-    await pool.request()
-      .input("id", sql.Int, id)
-      .input("title", sql.NVarChar, title)
-      .input("content", sql.NVarChar(sql.MAX), content)
-      .input("author", sql.NVarChar, author || "Admin")
-      .input("images", sql.NVarChar(sql.MAX), imagesJSON)
-      .query`UPDATE Blogs SET Title = @title, Content = @content, Author = @author, Images = @images WHERE Id = @id`;
-    res.json({ message: "Blog updated successfully" });
+   const { title, content, author, images, mainPhoto } = req.body;
+const imagesJSON = JSON.stringify(images || []);
+await pool.request()
+  .input("id", sql.Int, id)
+  .input("title", sql.NVarChar, title)
+  .input("content", sql.NVarChar(sql.MAX), content)
+  .input("author", sql.NVarChar, author || "Admin")
+  .input("images", sql.NVarChar(sql.MAX), imagesJSON)
+  .input("mainPhoto", sql.NVarChar(sql.MAX), mainPhoto || "")
+  .query`UPDATE Blogs 
+         SET Title = @title, Content = @content, Author = @author, Images = @images, MainPhoto = @mainPhoto 
+         WHERE Id = @id`;
+res.json({ message: "Blog updated successfully", mainPhoto });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
